@@ -100,7 +100,6 @@ app.get('/events', async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch events' });
   }
 });
-
 // 4. Create calendar event
 app.post('/events', async (req, res) => {
   if (!storedTokens) {
