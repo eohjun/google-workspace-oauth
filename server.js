@@ -120,13 +120,21 @@ app.get('/events', async (req, res) => {
   }
 });
 
+// Event type to color mapping
+const EVENT_COLOR_MAP = {
+  자기계발: '2',      // 초록 (#0F9D58)
+  개인: '1',         // 파랑 (#4285F4)
+  업무: '6',        // 주황 (#F4511E)
+  가족: '5'         // 노랑 (#F4B400)
+};
+
 // Create calendar event
 app.post('/events', async (req, res) => {
   if (!storedTokens) {
     return res.status(401).json({ error: 'Not authenticated. Call /auth first.' });
   }
 
-  const { summary, start, end, description } = req.body;
+  const { summary, start, end, description, type } = req.body;
 
   if (!summary || !start || !end) {
     return res.status(400).json({ error: 'Missing required fields: summary, start, end' });
@@ -148,6 +156,11 @@ app.post('/events', async (req, res) => {
         timeZone: 'Asia/Seoul'
       }
     };
+
+    // Apply color based on event type
+    if (type && EVENT_COLOR_MAP[type]) {
+      event.colorId = EVENT_COLOR_MAP[type];
+    }
 
     const response = await calendar.events.insert({
       calendarId: 'primary',
@@ -171,7 +184,7 @@ app.put('/events/:eventId', async (req, res) => {
   }
 
   const { eventId } = req.params;
-  const { summary, start, end, description } = req.body;
+  const { summary, start, end, description, type } = req.body;
 
   try {
     oauth2Client.setCredentials(storedTokens);
@@ -189,6 +202,16 @@ app.put('/events/:eventId', async (req, res) => {
         timeZone: 'Asia/Seoul'
       } : undefined
     };
+
+    // Update color based on event type
+    if (type !== undefined) {
+      if (type === null) {
+        // Remove color
+        event.colorId = null;
+      } else if (EVENT_COLOR_MAP[type]) {
+        event.colorId = EVENT_COLOR_MAP[type];
+      }
+    }
 
     Object.keys(event).forEach(key => event[key] === undefined && delete event[key]);
 

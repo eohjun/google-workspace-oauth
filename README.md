@@ -1,12 +1,22 @@
 # Google Calendar OAuth Service
 
-Moltbot과 Google Calendar 연동을 위한 OAuth 서비스입니다.
+Google Workspace와 연동을 위한 OAuth 서비스입니다.
 
 ## 기능
 
 - Google OAuth 2.0 인증
 - Google Calendar 이벤트 조회/생성/수정/삭제
+- 이벤트 타입별 자동 색상 적용
 - RESTful API 제공
+
+## 이벤트 색상 매핑
+
+| 타입 | 색상 | Color ID |
+|------|------|----------|
+| 자기계발 | 초록 | 2 |
+| 개인 | 파랑 | 1 |
+| 업무 | 주황 | 6 |
+| 가족 | 노랑 | 5 |
 
 ## API 엔드포인트
 
@@ -42,12 +52,19 @@ curl https://your-service.railway.app/events
 curl -X POST https://your-service.railway.app/events \
   -H "Content-Type: application/json" \
   -d '{
-    "summary": "회의",
-    "start": "2024-01-30T14:00:00+09:00",
-    "end": "2024-01-30T15:00:00+09:00",
-    "description": "중요한 회의"
+    "summary": "식사",
+    "start": "2024-01-30T18:00:00+09:00",
+    "end": "2024-01-30T20:00:00+09:00",
+    "description": "가족과 저녁 식사",
+    "type": "가족"
   }'
 ```
+
+이벤트 생성 시 `type` 필드를 포함하면 자동으로 색상이 적용됩니다:
+- `"type": "자기계발"` → 초록색
+- `"type": "개인"` → 파랑색
+- `"type": "업무"` → 주황색
+- `"type": "가족"` → 노랑색
 
 ## 환경변수
 
