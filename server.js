@@ -195,14 +195,21 @@ app.post('/events', async (req, res) => {
       event.colorId = EVENT_COLOR_MAP[inferredType];
     }
 
-    // Set reminders (keep default + add custom if provided)
+    // Set reminders
     if (reminders && reminders.length > 0) {
-      event.reminders = {
-        useDefault: true,  // Keep default reminders
-        overrides: reminders.map(r => ({
+      // When custom reminders are provided, disable default and include all reminders
+      // Include default 30-minute reminder
+      const allReminders = [
+        { method: 'popup', minutes: 30 },  // Default reminder
+        ...reminders.map(r => ({
           method: r.method || 'popup',
           minutes: r.minutes
         }))
+      ];
+
+      event.reminders = {
+        useDefault: false,
+        overrides: allReminders
       };
     }
 
@@ -265,13 +272,18 @@ app.put('/events/:eventId', async (req, res) => {
           useDefault: true
         };
       } else {
-        // Keep default + add custom reminders
-        event.reminders = {
-          useDefault: true,
-          overrides: reminders.map(r => ({
+        // Include default 30-minute reminder + custom reminders
+        const allReminders = [
+          { method: 'popup', minutes: 30 },  // Default reminder
+          ...reminders.map(r => ({
             method: r.method || 'popup',
             minutes: r.minutes
           }))
+        ];
+
+        event.reminders = {
+          useDefault: false,
+          overrides: allReminders
         };
       }
     }
