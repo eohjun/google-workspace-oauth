@@ -155,7 +155,7 @@ app.post('/events', async (req, res) => {
     return res.status(401).json({ error: 'Not authenticated. Call /auth first.' });
   }
 
-  const { summary, start, end, description, type } = req.body;
+  const { summary, start, end, description, type, reminders } = req.body;
 
   if (!summary || !start || !end) {
     return res.status(400).json({ error: 'Missing required fields: summary, start, end' });
@@ -186,6 +186,17 @@ app.post('/events', async (req, res) => {
       event.colorId = EVENT_COLOR_MAP[inferredType];
     }
 
+    // Set reminders (keep default + add custom if provided)
+    if (reminders && reminders.length > 0) {
+      event.reminders = {
+        useDefault: true,  // Keep default reminders
+        overrides: reminders.map(r => ({
+          method: r.method || 'popup',
+          minutes: r.minutes
+        }))
+      };
+    }
+
     const response = await calendar.events.insert({
       calendarId: 'primary',
       resource: event
@@ -208,12 +219,12 @@ app.put('/events/:eventId', async (req, res) => {
   }
 
   const { eventId } = req.params;
-  const { summary, start, end, description, type } = req.body;
+  const { summary, start, end, description, type, reminders } = req.body;
 
   try {
     oauth2Client.setCredentials(storedTokens);
     const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
-    
+
     const event = {
       summary,
       description,
@@ -234,6 +245,25 @@ app.put('/events/:eventId', async (req, res) => {
         event.colorId = null;
       } else if (EVENT_COLOR_MAP[type]) {
         event.colorId = EVENT_COLOR_MAP[type];
+      }
+    }
+
+    // Update reminders if provided
+    if (reminders !== undefined) {
+      if (reminders === null || reminders.length === 0) {
+        // Use default reminders only
+        event.reminders = {
+          useDefault: true
+        };
+      } else {
+        // Keep default + add custom reminders
+        event.reminders = {
+          useDefault: true,
+          overrides: reminders.map(r => ({
+            method: r.method || 'popup',
+            minutes: r.minutes
+          }))
+        };
       }
     }
 

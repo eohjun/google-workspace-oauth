@@ -66,6 +66,28 @@ curl -X POST https://your-service.railway.app/events \
 - `"type": "업무"` → 주황색
 - `"type": "가족"` → 노랑색
 
+### 4. 알람 설정
+기본 알람(30분 전)은 유지되며, 필요한 경우 추가 알람을 설정할 수 있습니다:
+
+```bash
+curl -X POST https://your-service.railway.app/events \
+  -H "Content-Type: application/json" \
+  -d '{
+    "summary": "중요한 미팅",
+    "start": "2024-02-05T10:00:00+09:00",
+    "end": "2024-02-05T12:00:00+09:00",
+    "type": "업무",
+    "reminders": [
+      {"method": "popup", "minutes": 1440},
+      {"method": "popup", "minutes": 60}
+    ]
+  }'
+```
+
+- `minutes: 1440` = 하루 전
+- `minutes: 60` = 1시간 전
+- `method`: `popup` (알림) 또는 `email` (이메일)
+
 ## 환경변수
 
 Railway Variables에서 설정:
