@@ -94,6 +94,17 @@ Railway Variables에서 설정:
 - `GOOGLE_CLIENT_ID`: Google OAuth 클라이언트 ID
 - `GOOGLE_CLIENT_SECRET`: Google OAuth 클라이언트 시크릿
 - `REDIRECT_URI`: `https://your-service.railway.app/callback`
+- `GOOGLE_REFRESH_TOKEN`: 토큰 갱신을 위한 refresh token (선택사항)
+
+## 토큰 갱신 설정
+
+### 1. 최초 인증 시 refresh token 획득
+1. `${GOOGLE_CALENDAR_URL}/auth` 방문 및 로그인
+2. Railway 콘솔 → Logs 탭에서 `REFRESH_TOKEN` 찾기
+3. Railway Variables에 `GOOGLE_REFRESH_TOKEN`으로 저장
+
+### 2. 토큰 자동 갱신
+서버 시작 시 refresh_token이 있으면 자동으로 access_token이 갱신되어, redeploy해도 인증이 유지됩니다.
 
 ## 개발
 

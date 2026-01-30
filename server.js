@@ -59,7 +59,7 @@ app.get('/auth', (req, res) => {
 // Handle OAuth callback
 app.get('/callback', async (req, res) => {
   const { code } = req.query;
-  
+
   if (!code) {
     return res.status(400).json({ error: 'No authorization code received' });
   }
@@ -68,11 +68,20 @@ app.get('/callback', async (req, res) => {
     const { tokens } = await oauth2Client.getToken(code);
     oauth2Client.setCredentials(tokens);
     storedTokens = tokens;
-    
+
+    // Print refresh_token for Railway environment variable
+    if (tokens.refresh_token) {
+      console.log('========================================');
+      console.log('REFRESH TOKEN (save to GOOGLE_REFRESH_TOKEN):');
+      console.log(tokens.refresh_token);
+      console.log('========================================');
+    }
+
     res.json({
       success: true,
       message: 'Successfully authenticated with Google Workspace!',
-      expiresAt: tokens.expiry_date
+      expiresAt: tokens.expiry_date,
+      hasRefreshToken: !!tokens.refresh_token
     });
   } catch (error) {
     console.error('Error during OAuth callback:', error);
@@ -576,12 +585,45 @@ app.get('/sheets/:spreadsheetId/:sheetId', async (req, res) => {
 });
 
 // ====================
+// Token Refresh on Server Start
+// ====================
+async function initializeTokens() {
+  const refreshToken = process.env.GOOGLE_REFRESH_TOKEN;
+
+  if (refreshToken) {
+    try {
+      oauth2Client.setCredentials({
+        refresh_token: refreshToken
+      });
+
+      const { credentials } = await oauth2Client.refreshAccessToken();
+      storedTokens = {
+        ...credentials,
+        refresh_token: refreshToken  // Keep the original refresh_token
+      };
+
+      console.log('✅ Token refreshed successfully using GOOGLE_REFRESH_TOKEN');
+      console.log(`📅 Access token expires at: ${new Date(credentials.expiry_date).toISOString()}`);
+    } catch (error) {
+      console.error('❌ Failed to refresh token:', error.message);
+      console.log('⚠️  Starting without valid token. Please re-authenticate.');
+    }
+  } else {
+    console.log('⚠️  No GOOGLE_REFRESH_TOKEN found. Token refresh on server start is disabled.');
+  }
+}
+
+// ====================
 // Start Server
 // ====================
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`🚀 Google Workspace OAuth service running on port ${PORT}`);
   console.log(`📝 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🔐 Client ID: ${process.env.GOOGLE_CLIENT_ID ? 'Set' : 'Not set'}`);
   console.log(`🔑 Client Secret: ${process.env.GOOGLE_CLIENT_SECRET ? 'Set' : 'Not set'}`);
   console.log(`🔗 Redirect URI: ${process.env.REDIRECT_URI || 'Not set'}`);
+  console.log(`🔄 Refresh Token: ${process.env.GOOGLE_REFRESH_TOKEN ? 'Set' : 'Not set'}`);
+
+  // Initialize tokens on server start
+  await initializeTokens();
 });
